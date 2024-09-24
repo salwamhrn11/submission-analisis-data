@@ -36,7 +36,7 @@ for df_name, df in data.items():
     elif df_name == 'order_items':
         data[df_name] = df.dropna(subset=['order_id', 'product_id', 'seller_id'])
     else:
-        data[df_name] = df.fillna(method='ffill')
+        data[df_name] = df.ffill()
     data[df_name] = df.drop_duplicates()
 
 # define date columns based on your datasets
