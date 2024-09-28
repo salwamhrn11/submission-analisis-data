@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # E-Commerce Data Analysis and Visualization with Python
 
 ## Table of Contents
@@ -39,3 +40,6 @@ This project focuses on analyzing and visualizing e-commerce data using Python. 
     ```
     streamlit run dashboard.py
     ```
+=======
+# submission-analisis-data
+>>>>>>> 534b0bf86fd2b5c2341b1b56b8fc31a4802862b5
