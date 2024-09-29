@@ -54,6 +54,13 @@ for df_name, df in data.items():
 # Streamlit app
 st.title("E-commerce Data Analysis Dashboard")
 
+# Sidebar for date selection
+st.sidebar.header("Date Range Selection")
+min_date = data['orders']['order_purchase_timestamp'].min()
+max_date = data['orders']['order_purchase_timestamp'].max()
+start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date, value=min_date)
+end_date = st.sidebar.date_input("End Date", min_value=min_date, max_value=max_date, value=max_date)
+
 # Sidebar for question selection
 st.sidebar.header("Select Analysis Question")
 question = st.sidebar.selectbox("Choose a question:", [
@@ -63,9 +70,15 @@ question = st.sidebar.selectbox("Choose a question:", [
     "Customer Distribution by Geolocation"
 ])
 
-# question 1
+# Filter data based on selected date range
+filtered_orders = data['orders'][
+    (data['orders']['order_purchase_timestamp'] >= pd.to_datetime(start_date)) &
+    (data['orders']['order_purchase_timestamp'] <= pd.to_datetime(end_date))
+]
+
+# Question 1
 if question == "Average Delivery Time by Zip Code and State":
-    order_geo = orders.merge(customers, on='customer_id').merge(geolocation, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix')
+    order_geo = filtered_orders.merge(customers, on='customer_id').merge(geolocation, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix')
     order_geo['delivery_time'] = (pd.to_datetime(order_geo['order_delivered_customer_date']) - pd.to_datetime(order_geo['order_purchase_timestamp'])).dt.days
     delivery_time_by_zip = order_geo.groupby(['customer_zip_code_prefix', 'customer_state'])['delivery_time'].mean().reset_index()
 
@@ -85,12 +98,12 @@ if question == "Average Delivery Time by Zip Code and State":
     plt.tight_layout()
     st.pyplot(plt)
     st.write(""" 
-        The graph shows the average delivery times for the top 10 zip codes. Areas with longer delivery times indicate regions that may require improved logistics solutions.
+        The graph shows the average delivery times for the top 10 zip codes within the selected date range. Areas with longer delivery times indicate regions that may require improved logistics solutions.
     """)
 
 # Question 2
 elif question == "Average Review Scores by Payment Method":
-    payment_review = orders.merge(order_reviews, on='order_id').merge(order_payments, on='order_id')
+    payment_review = filtered_orders.merge(order_reviews, on='order_id').merge(order_payments, on='order_id')
     avg_review_by_payment = payment_review.groupby('payment_type')['review_score'].mean().reset_index()
 
     # Get top 10 payment types by average review score
@@ -104,12 +117,13 @@ elif question == "Average Review Scores by Payment Method":
     plt.ylabel('Average Review Score')
     plt.xticks(rotation=45)
     st.pyplot(plt)
-    st.write("This bar chart shows the average review scores for the top 10 payment methods.")
+    st.write("This bar chart shows the average review scores for the top 10 payment methods within the selected date range.")
 
 # Question 3
 elif question == "Top Selling Product Categories":
     order_items_products = pd.merge(data['items'], data['products'], on='product_id')
-    top_categories = order_items_products['product_category_name'].value_counts().head(10)
+    filtered_items = order_items_products[order_items_products['order_id'].isin(filtered_orders['order_id'])]
+    top_categories = filtered_items['product_category_name'].value_counts().head(10)
 
     # Visualization
     plt.figure(figsize=(10, 6))
@@ -119,7 +133,7 @@ elif question == "Top Selling Product Categories":
     plt.xlabel('Product Category')
     plt.xticks(rotation=45)
     st.pyplot(plt)
-    st.write("This chart displays the top selling product categories.")
+    st.write("This chart displays the top selling product categories within the selected date range.")
 
 # Question 4
 elif question == "Customer Distribution by Geolocation":
@@ -136,4 +150,4 @@ elif question == "Customer Distribution by Geolocation":
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     st.pyplot(plt)
-    st.write("This scatter plot shows the distribution of customers across the top 10 states.")
+    st.write("This scatter plot shows the distribution of customers across the top 10 states within the selected date range.")
